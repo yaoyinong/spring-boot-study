@@ -5,7 +5,9 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring-boot-modules</module>
-        <module>spring-boot-easypoi</module>
+        <module>spring-boot-poi</module>
+        <module>spring-boot-easyexcel</module>
+        <module>spring-boot-kafka</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
