@@ -11,5 +11,4 @@ import com.modules.entity.UserInfo;
 public interface UserInfoService extends IService<UserInfo> {
 
 
-
 }

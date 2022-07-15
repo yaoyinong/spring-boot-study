@@ -1,7 +1,7 @@
 package com.modules.mapper;
 
-import com.modules.entity.UserInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.modules.entity.UserInfo;
 
 /**
  * <p>
