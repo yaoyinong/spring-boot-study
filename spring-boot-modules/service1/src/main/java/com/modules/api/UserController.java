@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -16,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/user")
-public class ApiController {
+public class UserController {
 
     @Autowired
     private UserInfoService userInfoService;
 
-    @GetMapping("getById/{id}")
-    public UserInfo getById(@PathVariable String id) {
+    @GetMapping("getUserById/{id}")
+    public UserInfo getUserById(@PathVariable Integer id) {
         return userInfoService.getById(id);
     }
 
