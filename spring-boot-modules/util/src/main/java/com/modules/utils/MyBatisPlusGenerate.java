@@ -1,4 +1,4 @@
-package com.modules.util;
+package com.modules.utils;
 
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.DataSourceConfig;

@@ -3,20 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>spring-boot-study</artifactId>
+        <artifactId>spring-boot-modules</artifactId>
         <groupId>com.study</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spring-boot-modules</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>mapper</module>
-        <module>service1</module>
-        <module>service2</module>
-        <module>util</module>
-    </modules>
+    <artifactId>util</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -24,18 +17,18 @@
     </properties>
 
     <dependencies>
-        <!-- MySQL连接 -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- MybatisPlus -->
+        <!-- MybatisPlus-Generator -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <artifactId>mybatis-plus-generator</artifactId>
             <version>3.5.2</version>
         </dependency>
+        <!-- MybatisPlus-Generator需要使用到freemarker -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>
