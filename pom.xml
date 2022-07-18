@@ -9,6 +9,11 @@
         <module>spring-boot-easyexcel</module>
         <module>spring-boot-kafka</module>
         <module>spring-boot-threadpool</module>
+        <module>spring-boot-rabbitmq</module>
+        <module>spring-boot-redis</module>
+        <module>spring-boot-elasticsearch</module>
+        <module>spring-boot-xxljob</module>
+        <module>spring-boot-annotation</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
