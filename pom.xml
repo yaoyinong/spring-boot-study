@@ -8,6 +8,7 @@
         <module>spring-boot-poi</module>
         <module>spring-boot-easyexcel</module>
         <module>spring-boot-kafka</module>
+        <module>spring-boot-threadpool</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
