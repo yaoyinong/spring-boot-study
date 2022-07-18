@@ -1,0 +1,9 @@
+server:
+  port: 8085
+
+thread-pool:
+  corePoolSize: 4
+  maxPoolSize: 8
+  queueCapacity: 30
+  keepAliveSeconds: 60
+  threadNamePrefix: 定时任务线程-
