@@ -19,6 +19,9 @@ public class ScheduleRunner {
 
     private final List<ScheduleService> scheduleServices;
 
+    /**
+     * 使用构造函数加载所有实现了ScheduleService的bean
+     */
     public ScheduleRunner(List<ScheduleService> scheduleServices) {
         this.scheduleServices = scheduleServices;
     }
