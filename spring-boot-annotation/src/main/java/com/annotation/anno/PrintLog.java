@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * @author yaoyinong
  * @date 2022/7/19 20:56
- * @description 操作日志切面配置
+ * @description 打印日志
  *
  * 注解作用域
  * @Target(ElementType.TYPE) 接口、类、枚举、注解
