@@ -1,6 +1,6 @@
 package com.elasticsearch.es.repository;
 
-import com.elasticsearch.es.mapping.HotelIndexMapping;
+import com.elasticsearch.es.doc.HotelDoc;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**
@@ -8,5 +8,5 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
  * @date 2022/7/22 00:58
  * @description es数据操作接口
  */
-public interface HotelEsRepository extends ElasticsearchRepository<HotelIndexMapping, Long> {
+public interface HotelEsRepository extends ElasticsearchRepository<HotelDoc, Long> {
 }

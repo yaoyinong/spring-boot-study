@@ -1,4 +1,4 @@
-package com.elasticsearch.es.mapping;
+package com.elasticsearch.es.doc;
 
 import lombok.Data;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -11,9 +11,9 @@ import org.springframework.data.elasticsearch.annotations.GeoPointField;
  * @date 2022/7/21 21:27
  * @description 索引映射
  */
-@Document(indexName = "hotel")
+@Document(indexName = "hotel",createIndex = true)
 @Data
-public class HotelIndexMapping {
+public class HotelDoc {
 
     /**
      * 酒店id
@@ -73,7 +73,7 @@ public class HotelIndexMapping {
      * 经纬度
      */
     @GeoPointField
-    private GeoPointMapping geoPoint;
+    private GeoPointDoc location;
 
     /**
      * 酒店图片

@@ -1,9 +1,10 @@
 package com.elasticsearch.test;
 
+import com.alibaba.fastjson.JSON;
 import com.elasticsearch.entity.TbHotel;
 import com.elasticsearch.es.repository.HotelEsRepository;
-import com.elasticsearch.es.mapping.GeoPointMapping;
-import com.elasticsearch.es.mapping.HotelIndexMapping;
+import com.elasticsearch.es.doc.GeoPointDoc;
+import com.elasticsearch.es.doc.HotelDoc;
 import com.elasticsearch.service.ITbHotelService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -39,15 +40,27 @@ public class HotelDocumentTest {
     @Test
     public void saveDocument() {
         List<TbHotel> list = hotelService.list();
-        log.info("插入数据:{}条", list.size());
-
-        List<HotelIndexMapping> collect = list.stream().map(h -> {
-            HotelIndexMapping model = new HotelIndexMapping();
+        List<HotelDoc> collect = list.stream().map(h -> {
+            HotelDoc model = new HotelDoc();
             BeanUtils.copyProperties(h, model);
-            model.setGeoPoint(new GeoPointMapping(h.getLatitude(), h.getLongitude()));
+            model.setLocation(new GeoPointDoc(h.getLatitude(), h.getLongitude()));
             return model;
         }).collect(Collectors.toList());
         hotelEsRepository.saveAll(collect);
+        log.info("插入数据:{}条", list.size());
+    }
+
+    /**
+     * 根据ID修改文档
+     */
+    @Test
+    public void updateDocumentById() {
+        Optional<HotelDoc> byId = hotelEsRepository.findById(2051661320L);
+        if (byId.isPresent()) {
+            HotelDoc hotelIndexMapping = byId.get();
+            hotelIndexMapping.setStarName("四钻");
+            hotelEsRepository.save(hotelIndexMapping);
+        }
     }
 
     /**
@@ -55,12 +68,12 @@ public class HotelDocumentTest {
      */
     @Test
     public void selectDocumentById() {
-        Optional<HotelIndexMapping> byId = hotelEsRepository.findById(2051661320L);
+        Optional<HotelDoc> byId = hotelEsRepository.findById(2048050570L);
         if (byId.isPresent()) {
-            HotelIndexMapping hotelIndexMappingModel = byId.get();
-            log.info("根据ID查询文档成功：{}", hotelIndexMappingModel);
+            HotelDoc hotel = byId.get();
+            System.out.println(JSON.toJSONString(hotel));
         } else {
-            log.info("根据ID查询文档失败，无数据,ID:{}", 2051661320L);
+            log.info("根据ID查询文档失败，无数据,ID:{}", 2048050570L);
         }
     }
 
@@ -69,22 +82,9 @@ public class HotelDocumentTest {
      */
     @Test
     public void deleteDocumentById() {
-        hotelEsRepository.deleteById(2048671293L);
+        hotelEsRepository.deleteById(2051661320L);
     }
 
-    /**
-     * 根据ID修改文档
-     */
-    @Test
-    public void updateDocumentById() {
-        Optional<HotelIndexMapping> byId = hotelEsRepository.findById(2051661320L);
-        if (byId.isPresent()) {
-            HotelIndexMapping hotelIndexMapping = byId.get();
-            hotelIndexMapping.setStarName("四钻");
-            hotelEsRepository.save(hotelIndexMapping);
-        }
 
-
-    }
 
 }

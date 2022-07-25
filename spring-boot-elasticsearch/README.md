@@ -208,3 +208,280 @@ post /mytest/_update/1
   }
 }
 ```
+---
+
+## 实操
+创建索引:
+```json
+# 新建索引库：酒店
+put /hotel
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "copy_to": "all"
+      },
+      "address": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "copy_to": "all"
+      },
+      "price": {
+        "type": "integer"
+      },
+      "score": {
+        "type": "integer"
+      },
+      "brand": {
+        "type": "keyword",
+        "copy_to": "all"
+      },
+      "city": {
+        "type": "keyword"
+      },
+      "starName": {
+        "type": "keyword"
+      },
+      "business": {
+        "type": "keyword",
+        "copy_to": "all"
+      },
+      "location": {
+        "type": "geo_point"
+      },
+      "pic": {
+        "type": "keyword",
+        "index": false
+      },
+      "all": {
+        "type": "text",
+        "analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+```
+
+DSL查询
+```json
+# 查询所有
+get /hotel/_search
+{
+  "query":{
+    "match_all": {}
+  }
+}
+
+# match查询
+get /hotel/_search
+{
+  "query":{
+    "match": {
+      "all": "唐山如家"
+    }  
+  }
+}
+
+# multi_match多字段查询
+get /hotel/_search
+{
+  "query":{
+    "multi_match": {
+      "query": "唐山如家",
+      "fields": ["name","address","business"]
+    }
+  }
+}
+
+# term精确查询
+get /hotel/_search
+{
+  "query":{
+    "term": {
+      "city": {
+        "value": "上海"
+      }
+    }
+  }
+}
+
+# range范围查询
+get /hotel/_search
+{
+  "query":{
+    "range": {
+      "price": {
+        "gte": 2000,
+        "lte": 5000
+      }
+    }
+  }
+}
+
+# distance地理查询（圆形范围查询，指定圆心）
+get /hotel/_search
+{
+  "query":{
+    "geo_distance": {
+      "distance":"2km",
+      "location":{
+         "lat":"31.21",
+         "lon":"121.5"
+      }
+    }
+  }
+}
+
+# geo_bounding_box地理查询（矩形范围查询，指定左上角和右下角）
+get /hotel/_search
+{
+  "query":{
+    "geo_bounding_box": {
+      "location":{
+        "top_left":{
+          "lat":"31.1",
+          "lon":"121.5"
+        },
+        "bottom_right":{
+          "lat":"30.5",
+          "lon":"121.7"
+        }
+      }
+    }
+  }
+}
+
+# function score查询
+get /hotel/_search
+{
+  "query":{
+    "function_score": {
+      "query": {
+        "match": {
+          "all": "外滩"
+        }
+      },
+      "functions": [
+        {
+          "filter": {
+            "term": {
+              "brand": "如家"
+            }
+          },
+          "weight": 10
+        }
+      ],
+      "boost_mode": "sum"
+    }
+  }
+}
+
+# bool查询(自定义参与算分字段must、should、must_not\filter)
+get /hotel/_search
+{
+  "query":{
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "name": "如家"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "range": {
+            "price": {
+              "gt": 400
+            }
+          }
+        }
+      ],
+      "filter": [
+        {
+          "geo_distance": {
+            "distance": "10km",
+            "location": {
+              "lat": 31.21,
+              "lon": 121.5
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+# sort排序
+get /hotel/_search
+{
+  "query":{
+    "match_all": {}
+  },
+  "sort":[
+    {
+      "score":"desc"
+    },
+    {
+      "price":"asc"
+    }
+  ]
+}
+
+# 按照坐标升序排序121.577784,31.152293
+get /hotel/_search
+{
+  "query":{
+    "match_all": {}
+  },
+  "sort":[
+    {
+      "_geo_distance":{
+        "location":{
+          "lon":121.577784,
+          "lat":31.152293
+        },
+        "order":"asc",
+        "unit":"km"
+      }
+    }
+  ]
+}
+
+# 分页处理
+get /hotel/_search
+{
+  "query":{
+    "match_all": {}
+  },
+  "from":0,
+  "size":20,
+  "sort":[
+    {
+      "price":"desc"
+    }
+  ]
+}
+
+# 高亮显示,默认情况下ES搜索字段必需与高亮字段保持一只
+get /hotel/_search
+{
+  "query":{
+    "match": {
+      "all": "如家"
+    }
+  },
+  "highlight":{
+    "fields": {
+      "name": {
+        "require_field_match": "false"
+      }
+    }
+  }
+}
+```

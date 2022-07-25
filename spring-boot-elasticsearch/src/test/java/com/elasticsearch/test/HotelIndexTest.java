@@ -1,6 +1,6 @@
 package com.elasticsearch.test;
 
-import com.elasticsearch.es.mapping.HotelIndexMapping;
+import com.elasticsearch.es.doc.HotelDoc;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,9 +38,9 @@ public class HotelIndexTest {
      */
     @Test
     public void createIndexAndMapping() {
-        boolean withMapping = restTemplate.indexOps(HotelIndexMapping.class).createWithMapping();
+        boolean withMapping = restTemplate.indexOps(HotelDoc.class).createWithMapping();
         log.info("创建索引库：{}", withMapping);
-        log.info("验证索引库是否存在：{}", indexIsExists(HotelIndexMapping.class));
+        log.info("验证索引库是否存在：{}", indexIsExists(HotelDoc.class));
     }
 
     /**
@@ -49,11 +49,11 @@ public class HotelIndexTest {
      */
     @Test
     public void deleteIndex() {
-        Boolean isExists = indexIsExists(HotelIndexMapping.class);
+        Boolean isExists = indexIsExists(HotelDoc.class);
         log.info("索引库是否存在：{}", isExists);
         boolean delete = false;
         if (isExists) {
-            delete = restTemplate.indexOps(HotelIndexMapping.class).delete();
+            delete = restTemplate.indexOps(HotelDoc.class).delete();
         }
         log.info("删除索引库：{}", delete);
     }
