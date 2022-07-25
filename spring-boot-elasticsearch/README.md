@@ -1,4 +1,4 @@
-# spring-boot-elasticsearch SpringBoot整合ES搜索引擎
+# spring-boot-elasticsearch SpringBoot整合ES搜索引擎+MySQL数据同步
 > elasticsearch 是面向文档储存的，可以是数据库中的一个商品、一条订单。<br />
 > 文档数据会被序列化为json格式后存储到elasticsearch中</br>
 > es擅长海量数据的搜索、分析、计算</br>
@@ -483,5 +483,26 @@ get /hotel/_search
       }
     }
   }
+}
+
+# 滚动查询 先查询一次获取到scrollid，然后通过scrollid获取下一轮数据
+get /hotel/_search?scroll=5m
+{
+  "query":{
+  "match_all": {}
+  },
+  "from":0,
+  "size":10,
+  "sort":[
+  {
+    "price":"desc"
+  }
+  ]
+}
+
+get /_search/scroll
+{
+  "scroll":"1m",
+  "scroll_id":"FGluY2x1ZGVfY29udGV4dF91dWlkDXF1ZXJ5QW5kRmV0Y2gBFjBBbEd1QjJZUi0yVUt0NzNybnR3VVEAAAAAAAFHEBZxSnRoeXRPc1RxSzBKaXg1SzZQYlB3"
 }
 ```

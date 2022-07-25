@@ -1,4 +1,4 @@
-package com.elasticsearch.dto;
+package com.elasticsearch.model.dto;
 
 import com.elasticsearch.es.doc.HotelDoc;
 import lombok.Data;

@@ -1,13 +1,9 @@
 package com.elasticsearch.test;
 
 import com.alibaba.fastjson.JSON;
-import com.elasticsearch.dto.HotelDTO;
+import com.elasticsearch.model.dto.HotelDTO;
 import com.elasticsearch.es.doc.HotelDoc;
-import com.elasticsearch.es.repository.HotelEsRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.util.QueryBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
@@ -17,25 +13,23 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchScrollHits;
 import org.springframework.data.elasticsearch.core.geo.GeoPoint;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.HighlightQuery;
-import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightFieldParameters;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author yaoyinong
@@ -48,34 +42,7 @@ import java.util.stream.IntStream;
 public class HotelSearchTest {
 
     @Resource
-    private HotelEsRepository hotelEsRepository;
-
-    @Resource
     private ElasticsearchRestTemplate restTemplate;
-
-    /**
-     * 查询所有
-     */
-    @Test
-    public void matchAll() {
-        Iterable<HotelDoc> all = hotelEsRepository.findAll(Sort.by(Sort.Direction.DESC, "price"));
-        AtomicInteger a = new AtomicInteger(1);
-        all.forEach(h -> {
-            System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h));
-        });
-    }
-
-    /**
-     * 分页查询
-     */
-    @Test
-    public void page() {
-        Iterable<HotelDoc> all = hotelEsRepository.findAll(Pageable.ofSize(10).withPage(2));
-        AtomicInteger a = new AtomicInteger(1);
-        all.forEach(h -> {
-            System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h));
-        });
-    }
 
     /**
      * 多条件（模糊）分页查询
@@ -165,9 +132,31 @@ public class HotelSearchTest {
             return dto;
         }).collect(Collectors.toList());
         AtomicInteger a = new AtomicInteger(1);
-        dtoList.forEach(dto -> {
-            System.out.println(a.getAndIncrement() + ">>>highlight>>" + JSON.toJSONString(dto));
-        });
+        dtoList.forEach(dto -> System.out.println(a.getAndIncrement() + ">>>highlight>>" + JSON.toJSONString(dto)));
     }
+
+    /**
+     * 滚动查询
+     * es的分页查询是将所有数据查出来然后取需要的几条，深度分页的话效率很低
+     * 如果不需要翻上一页的话可以使用滚动查询
+     */
+    @Test
+    public void scroll() {
+        Criteria criteria = new Criteria();
+        CriteriaQuery query = new CriteriaQuery(criteria)
+                .setPageable(Pageable.ofSize(10).withPage(0))
+                .addSort(Sort.by(Sort.Direction.DESC, "price"));
+        query.setScrollTime(Duration.ZERO);
+        SearchScrollHits<HotelDoc> scrollSearch = restTemplate.searchScrollStart(10L, query, HotelDoc.class, IndexCoordinates.of("hotel"));
+        List<HotelDoc> collect = scrollSearch.get().map(SearchHit::getContent).collect(Collectors.toList());
+        AtomicInteger a = new AtomicInteger(1);
+        collect.forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
+
+        while (scrollSearch.hasSearchHits()) {
+            scrollSearch = restTemplate.searchScrollContinue(scrollSearch.getScrollId(), 10L, HotelDoc.class, IndexCoordinates.of("hotel"));
+            scrollSearch.get().map(SearchHit::getContent).collect(Collectors.toList()).forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
+        }
+    }
+
 
 }
