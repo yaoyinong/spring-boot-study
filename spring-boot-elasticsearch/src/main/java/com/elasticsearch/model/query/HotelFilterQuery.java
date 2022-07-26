@@ -9,7 +9,7 @@ import org.elasticsearch.common.geo.GeoPoint;
  * @description
  */
 @Data
-public class HotelListQuery extends PageBaseQuery {
+public class HotelFilterQuery {
 
     /**
      * all查询
@@ -45,10 +45,5 @@ public class HotelListQuery extends PageBaseQuery {
      * 精确匹配
      */
     private Integer maxPrice;
-
-    /**
-     * 坐标
-     */
-    private GeoPoint geoPoint;
 
 }

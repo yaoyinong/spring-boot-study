@@ -2,6 +2,7 @@ package com.elasticsearch.controller;
 
 import com.elasticsearch.model.dto.HotelDTO;
 import com.elasticsearch.model.query.DistanceLocationQuery;
+import com.elasticsearch.model.query.HotelFilterQuery;
 import com.elasticsearch.model.query.HotelListQuery;
 import com.elasticsearch.model.result.PageResult;
 import com.elasticsearch.service.ITbHotelService;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author yaoyinong
@@ -43,6 +46,14 @@ public class HotelController {
     @GetMapping("/distanceLocation")
     public List<HotelDTO> distanceLocation(@RequestBody DistanceLocationQuery query) {
         return hotelService.distanceLocation(query);
+    }
+
+    /**
+     * 查询条件
+     */
+    @GetMapping("/filter")
+    public Map<String, Set<String>> filter(@RequestBody HotelFilterQuery query) {
+        return hotelService.filters(query);
     }
 
 }

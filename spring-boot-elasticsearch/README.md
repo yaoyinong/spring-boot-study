@@ -210,7 +210,7 @@ post /mytest/_update/1
 ```
 ---
 
-## 实操
+## DSL实操
 创建索引:
 ```json
 # 新建索引库：酒店
@@ -504,5 +504,77 @@ get /_search/scroll
 {
   "scroll":"1m",
   "scroll_id":"FGluY2x1ZGVfY29udGV4dF91dWlkDXF1ZXJ5QW5kRmV0Y2gBFjBBbEd1QjJZUi0yVUt0NzNybnR3VVEAAAAAAAFHEBZxSnRoeXRPc1RxSzBKaXg1SzZQYlB3"
+}
+```
+
+## 聚合
+聚合（aggregations）可以实现对文档数据的统计、分析、运算。聚合常见的有三类：
+* 桶（Bucket）聚合：用来对文档做分组（文档必需是keyword，不能分词）
+  * TermAggregation：按照文档字段进行分组
+  * Date Histogram：按照日期阶梯分组，例如一周为一组，或者一月为一组
+* 度量（Metric）聚合：用以计算一些值，比如：最大值、最小值、平均值等
+  * Avg：求平均值
+  * Max：求最大值
+  * Min：求最小值
+  * Sum：求和
+  * Stats：同时求Max、Min、Avg、Sum等
+* 管道（Pipeline）聚合：其他聚合的结果为基础做聚合
+
+DSL:
+```json
+# 聚合搜索
+# Bucket
+get /hotel/_search
+{
+  "query":{
+    "range": {
+      "price": {
+        "lte": 300
+      }
+    }
+  },
+  "size":0,
+  "aggs":{
+    "brandAgg":{
+      "terms": {
+        "field": "brand",
+        "size": 20,
+        "order": {
+          "_count": "asc"
+        }
+      }
+    }
+  }
+}
+
+# Metric
+get /hotel/_search
+{
+  "query":{
+    "range": {
+      "price": {
+        "gte": 1000
+      }
+    }
+  },
+  "size":0,
+  "aggs":{
+    "brandAgg":{
+      "terms": {
+        "field": "brand",
+        "size": 20,
+        "order": {
+          "price_aggs.avg": "desc"
+        }
+      },
+      "aggs": {
+        "price_aggs": {
+          "stats": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
 }
 ```

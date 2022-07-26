@@ -1,7 +1,6 @@
 package com.elasticsearch.test;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.elasticsearch.model.dto.HotelDTO;
 import com.elasticsearch.es.doc.HotelDoc;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +15,9 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
@@ -29,6 +31,7 @@ import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.AggregationsContainer;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -42,6 +45,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -225,11 +229,26 @@ public class HotelSearchTest {
      */
     @Test
     public void aggregations() {
-        TermsAggregationBuilder field = AggregationBuilders.terms("count").field("brand");
+        RangeQueryBuilder price = QueryBuilders.rangeQuery("price").lte(1000);
+        TermsAggregationBuilder field = AggregationBuilders
+                .terms("cityAgg")
+                .field("city")
+                .size(2)
+                .order(BucketOrder.aggregation("_count",true));
         NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(price)
+                .withPageable(Pageable.ofSize(1).withPage(0))
                 .withAggregations(field)
                 .build();
         SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
+        //取出聚合结果
+        Aggregations aggregations = (Aggregations) search.getAggregations().aggregations();
+        Terms terms = (Terms) aggregations.asMap().get("cityAgg");
+        for (Terms.Bucket bucket : terms.getBuckets()) {
+            String keyAsString = bucket.getKeyAsString();   // 聚合字段列的值
+            long docCount = bucket.getDocCount();           // 聚合字段对应的数量
+            System.out.println(keyAsString + " " + docCount);
+        }
     }
 
 }
