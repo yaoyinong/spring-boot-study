@@ -5,6 +5,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.GeoPointField;
+import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 
 /**
  * @author yaoyinong
@@ -73,7 +74,7 @@ public class HotelDoc {
      * 经纬度
      */
     @GeoPointField
-    private GeoPointDoc location;
+    private GeoPoint location;
 
     /**
      * 酒店图片
@@ -86,5 +87,11 @@ public class HotelDoc {
      */
     @Field(type = FieldType.Text,analyzer = "ik_max_word")
     private String all;
+
+    /**
+     * 是否为广告
+     */
+    @Field(type = FieldType.Boolean)
+    private Boolean isAd;
 
 }

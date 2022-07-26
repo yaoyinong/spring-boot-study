@@ -3,7 +3,6 @@ package com.elasticsearch.test;
 import com.alibaba.fastjson.JSON;
 import com.elasticsearch.entity.TbHotel;
 import com.elasticsearch.es.repository.HotelEsRepository;
-import com.elasticsearch.es.doc.GeoPointDoc;
 import com.elasticsearch.es.doc.HotelDoc;
 import com.elasticsearch.service.ITbHotelService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
@@ -43,7 +43,8 @@ public class HotelDocumentTest {
         List<HotelDoc> collect = list.stream().map(h -> {
             HotelDoc model = new HotelDoc();
             BeanUtils.copyProperties(h, model);
-            model.setLocation(new GeoPointDoc(h.getLatitude(), h.getLongitude()));
+            model.setLocation(new GeoPoint(Double.parseDouble(h.getLatitude()), Double.parseDouble(h.getLongitude())));
+            model.setIsAd(false);
             return model;
         }).collect(Collectors.toList());
         hotelEsRepository.saveAll(collect);

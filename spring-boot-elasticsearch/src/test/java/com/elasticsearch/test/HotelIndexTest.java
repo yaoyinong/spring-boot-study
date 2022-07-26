@@ -1,6 +1,7 @@
 package com.elasticsearch.test;
 
 import com.elasticsearch.es.doc.HotelDoc;
+import com.elasticsearch.model.dto.HotelDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;

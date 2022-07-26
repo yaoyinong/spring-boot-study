@@ -1,33 +1,49 @@
 package com.elasticsearch.test;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.elasticsearch.model.dto.HotelDTO;
 import com.elasticsearch.es.doc.HotelDoc;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.GeoBoundingBoxQueryBuilder;
+import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cglib.beans.BeanMap;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchScrollHits;
-import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.query.HighlightQuery;
-import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -44,38 +60,87 @@ public class HotelSearchTest {
     @Resource
     private ElasticsearchRestTemplate restTemplate;
 
-    /**
-     * 多条件（模糊）分页查询
-     */
-    @Test
-    public void matchPage() {
-        Criteria criteria = new Criteria();
-        criteria.and(new Criteria("name").matches("希尔顿"));
-        criteria.and(new Criteria("city").in("北京","上海"));
-        criteria.and(new Criteria("price").greaterThanEqual("1000").lessThanEqual("2000"));
-        CriteriaQuery query = new CriteriaQuery(criteria)
-                .setPageable(Pageable.ofSize(10).withPage(0))
-                .addSort(Sort.by(Sort.Direction.DESC, "price"));
-        SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
-        List<HotelDoc> collect = search.get().map(SearchHit::getContent).collect(Collectors.toList());
+    private void printData(SearchHits<?> searchHits) {
+        List<?> collect = searchHits.get().map(hit -> {
+            HotelDTO hotelDTO = new HotelDTO();
+            BeanUtils.copyProperties(hit.getContent(), hotelDTO);
+            Map<String, List<String>> highlightFields = hit.getHighlightFields();
+            if (highlightFields.size() > 0) {
+                for (Map.Entry<String, List<String>> entry : highlightFields.entrySet()) {
+                    BeanMap beanMap = BeanMap.create(hotelDTO);
+                    beanMap.put(entry.getKey(), highlightFields.get(entry.getKey()).get(0));
+                    hotelDTO = (HotelDTO) beanMap.getBean();
+                }
+            }
+            return hotelDTO;
+        }).collect(Collectors.toList());
+
         AtomicInteger a = new AtomicInteger(1);
         collect.forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
     }
 
     /**
-     * range范围查询
-     * between
+     * 搜索全部数据，按照price进行排序
      */
     @Test
-    public void range() {
-        Criteria criteria = new Criteria("price").between(0,150);
-        CriteriaQuery query = new CriteriaQuery(criteria)
-                .setPageable(Pageable.ofSize(10).withPage(0))
-                .addSort(Sort.by(Sort.Direction.DESC, "price"));
+    public void matchAll() {
+        // 构建查询条件(搜索全部)
+        MatchAllQueryBuilder queryBuilder = QueryBuilders.matchAllQuery();
+        // 分页
+        Pageable pageable = PageRequest.of(0, 10);
+        // 排序
+        FieldSortBuilder sortBuilder = new FieldSortBuilder("id").order(SortOrder.DESC);
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(queryBuilder)
+                .withPageable(pageable)
+                .withSorts(sortBuilder)
+                .build();
         SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
-        List<HotelDoc> collect = search.get().map(SearchHit::getContent).collect(Collectors.toList());
-        AtomicInteger a = new AtomicInteger(1);
-        collect.forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
+        printData(search);
+    }
+
+    /**
+     * 条件搜索
+     */
+    @Test
+    public void match() {
+        // 搜索出包含 地铁 的文档
+        MatchQueryBuilder matchQueryBuilder = QueryBuilders.matchQuery("name", "地铁 上海").operator(Operator.AND);
+        // 对于数值类型是精准匹配，对于文本类型是 模糊匹配,_score越高在前
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery("brand", "速8");
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchQueryBuilder).build();
+        SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
+        printData(search);
+    }
+
+    /**
+     * 组合搜索
+     */
+    @Test
+    public void bool() {
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        // must表示同时满足，should满足其中一个，must_not表示同时不满足
+        boolQueryBuilder.must(QueryBuilders.matchQuery("name", "上海"));
+        boolQueryBuilder.must(QueryBuilders.termQuery("brand", "如家"));
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(boolQueryBuilder).build();
+        SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
+        printData(search);
+    }
+
+    /**
+     * 过滤搜索
+     */
+    @Test
+    public void filter() {
+        // 构建条件
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("price").gte(0).lte(150);
+        boolQueryBuilder.filter(rangeQueryBuilder);
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(boolQueryBuilder)
+                .build();
+        SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
+        printData(search);
     }
 
     /**
@@ -84,12 +149,16 @@ public class HotelSearchTest {
     @Test
     public void distanceLocation() {
         GeoPoint point = new GeoPoint(31.21, 121.5);
-        Criteria criteria = new Criteria("location").within(point, "2km");
-        CriteriaQuery query = new CriteriaQuery(criteria);
+        GeoDistanceQueryBuilder queryBuilder = QueryBuilders.geoDistanceQuery("location");
+        queryBuilder.distance("2km");
+        queryBuilder.point(point);
+        GeoDistanceSortBuilder sortBuilder = new GeoDistanceSortBuilder("location", point).order(SortOrder.ASC);
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(queryBuilder)
+                .withSorts(sortBuilder)
+                .build();
         SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
-        List<HotelDoc> collect = search.get().map(SearchHit::getContent).collect(Collectors.toList());
-        AtomicInteger a = new AtomicInteger(1);
-        collect.forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
+        printData(search);
     }
 
     /**
@@ -97,14 +166,12 @@ public class HotelSearchTest {
      */
     @Test
     public void boxLocation() {
-        GeoPoint topLeft = new GeoPoint(31.1,121.5);
-        GeoPoint bottomRight = new GeoPoint(30.5,121.7);
-        Criteria criteria = new Criteria("location").boundedBy(topLeft,bottomRight);
-        CriteriaQuery query = new CriteriaQuery(criteria);
+        GeoPoint topLeft = new GeoPoint(31.1, 121.5);
+        GeoPoint bottomRight = new GeoPoint(30.5, 121.7);
+        GeoBoundingBoxQueryBuilder queryBuilder = QueryBuilders.geoBoundingBoxQuery("location").setCorners(topLeft, bottomRight);
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder).build();
         SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
-        List<HotelDoc> collect = search.get().map(SearchHit::getContent).collect(Collectors.toList());
-        AtomicInteger a = new AtomicInteger(1);
-        collect.forEach(h -> System.out.println(a.getAndIncrement() + "---" + JSON.toJSONString(h)));
+        printData(search);
     }
 
     /**
@@ -112,27 +179,22 @@ public class HotelSearchTest {
      */
     @Test
     public void highlight() {
-        Criteria criteria = new Criteria("all").matches("如家");
-        CriteriaQuery query = new CriteriaQuery(criteria);
-
-        // 高亮
-        HighlightParameters build = HighlightParameters.builder()
-                .withRequireFieldMatch(false)
-                .withPreTags(new String[]{"<high>"})
-                .withPostTags(new String[]{"</high>"})
+        // 搜索出包含 地铁 的文档
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder.must(QueryBuilders.matchQuery("name", "上海").operator(Operator.AND));
+        boolQueryBuilder.must(QueryBuilders.matchQuery("brand", "如家"));
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.field("name");//高亮的字段
+        highlightBuilder.field("brand");//高亮的字段
+        highlightBuilder.requireFieldMatch(true);//是否多个字段都高亮
+        highlightBuilder.preTags("<high>");
+        highlightBuilder.postTags("</high>");
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(boolQueryBuilder)
+                .withHighlightBuilder(highlightBuilder)
                 .build();
-        Highlight highlight = new Highlight(build, Collections.singletonList(new HighlightField("name")));
-        HighlightQuery highlightQuery = new HighlightQuery(highlight,HotelDoc.class);
-        query.setHighlightQuery(highlightQuery);
         SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
-        List<HotelDTO> dtoList = search.get().map(s -> {
-            HotelDTO dto = new HotelDTO();
-            BeanUtils.copyProperties(s.getContent(), dto);
-            dto.setHighlight(s.getHighlightFields());
-            return dto;
-        }).collect(Collectors.toList());
-        AtomicInteger a = new AtomicInteger(1);
-        dtoList.forEach(dto -> System.out.println(a.getAndIncrement() + ">>>highlight>>" + JSON.toJSONString(dto)));
+        printData(search);
     }
 
     /**
@@ -158,5 +220,16 @@ public class HotelSearchTest {
         }
     }
 
+    /**
+     * 聚合搜索
+     */
+    @Test
+    public void aggregations() {
+        TermsAggregationBuilder field = AggregationBuilders.terms("count").field("brand");
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withAggregations(field)
+                .build();
+        SearchHits<HotelDoc> search = restTemplate.search(query, HotelDoc.class);
+    }
 
 }

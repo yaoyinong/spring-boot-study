@@ -1,6 +1,5 @@
 package com.elasticsearch.model.query;
 
-import cn.hutool.core.text.CharSequenceUtil;
 import lombok.Data;
 
 /**
@@ -11,12 +10,26 @@ import lombok.Data;
 @Data
 public class PageBaseQuery {
 
+    /**
+     * 页码
+     */
     private Integer page;
 
+    /**
+     * 每页数量
+     */
     private Integer size;
 
+    /**
+     * 排序字段
+     * 默认ID
+     */
     private String sortBy;
 
+    /**
+     * 排序规则
+     * 默认ASC
+     */
     private String direction;
 
     public void setPage(Integer page) {
@@ -27,7 +40,4 @@ public class PageBaseQuery {
         this.size = size != null ? size : 10;
     }
 
-    public void setDirection(String direction) {
-        this.direction = CharSequenceUtil.isNotBlank(direction) ? direction : "asc";
-    }
 }

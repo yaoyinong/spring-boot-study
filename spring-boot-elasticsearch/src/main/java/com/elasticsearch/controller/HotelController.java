@@ -29,6 +29,7 @@ public class HotelController {
 
     /**
      * 搜索、分页
+     * 支持按照距离进行排序
      */
     @GetMapping("/list")
     public PageResult list(@RequestBody HotelListQuery query) {
