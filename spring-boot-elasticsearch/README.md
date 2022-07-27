@@ -100,6 +100,20 @@ post /_analyze
 }
 ```
 
+### 安装拼音分词器
+***7.17.4改为对应的es版本***
+```bash
+./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-pinyin/releases/download/v7.17.4/elasticsearch-analysis-pinyin-7.17.4.zip
+```
+```json
+# 拼音分词器
+post /_analyze
+{
+  "text":"如家酒店",
+  "analyzer":"pinyin"
+}
+```
+
 ## 索引库操作
 * 创建索引库：put /索引库名
 * 查询索引库：get /索引库名
