@@ -1,0 +1,12 @@
+server:
+  port: 8088
+canal-monitor-mysql:
+  hostname: 127.0.0.1
+  port: 11111
+  tableName: spring-boot-elasticsearch.*
+thread-pool:
+  corePoolSize: 4
+  maxPoolSize: 8
+  queueCapacity: 30
+  keepAliveSeconds: 60
+  threadNamePrefix: 线程池-
