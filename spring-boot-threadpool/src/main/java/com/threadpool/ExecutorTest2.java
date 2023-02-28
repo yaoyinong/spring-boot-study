@@ -31,7 +31,7 @@ public class ExecutorTest2 {
     /**
      * 线程池的核心参数
      * corePollSize：核心线程数 一直在保持运行的线程
-     * maximumPoolSize：最大线程数，线程池允许创建的最大线程数，队列满了之后出发创建。必须>=核心线程数
+     * maximumPoolSize：最大线程数，线程池允许创建的最大线程数，队列满了之后触发创建。必须>=核心线程数
      * keepAliveTime：超出corePoolSize后（最大线程）创建的线程的存过时间
      * unit：keepAliveTime的时间单位
      * workQueue：任务队列，用于保存待执行的任务

@@ -35,8 +35,10 @@ public class ExportExcelServiceImpl implements ExportExcelService {
 
     @Override
     public void download(HttpServletResponse response) {
-        try (XSSFWorkbook workbook = new XSSFWorkbook();
-             ServletOutputStream out = response.getOutputStream()) {
+        try (
+                XSSFWorkbook workbook = new XSSFWorkbook();
+                ServletOutputStream out = response.getOutputStream();
+        ) {
             log.info("开始生成Excel...");
             XSSFSheet sheet = workbook.createSheet("测试sheet1");
             List<String> title = Arrays.asList("编号", "姓名", "性别", "住址", "手机号", "余额");
